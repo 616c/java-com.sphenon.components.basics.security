@@ -1,7 +1,7 @@
 package com.sphenon.basics.security;
 
 /****************************************************************************
-  Copyright 2001-2018 Sphenon GmbH
+  Copyright 2001-2024 Sphenon GmbH
 
   Licensed under the Apache License, Version 2.0 (the "License"); you may not
   use this file except in compliance with the License. You may obtain a copy
@@ -56,7 +56,7 @@ public class UserImpl extends UserBaseImpl {
             }
             name = null;
         } else {
-            permissions = PermissionsImpl.create(context, m1.group(3), user_manager);
+            permissions = PermissionsImpl.create(context, m1.group(3), user_manager, UserManager.EntryType.USER);
             if (permissions == null) {
                 if ((notification_level & Notifier.MONITORING) != 0) { CustomaryContext.create((Context)context).sendWarning(context, "Invalid user, permissions invalid"); }
                 name = null;

@@ -15,13 +15,28 @@ package com.sphenon.basics.security;
 *****************************************************************************/
 
 import com.sphenon.basics.context.*;
+import com.sphenon.basics.context.classes.*;
 import com.sphenon.basics.message.*;
 import com.sphenon.basics.notification.*;
+import com.sphenon.basics.configuration.*;
+import com.sphenon.basics.customary.*;
+import com.sphenon.basics.exception.*;
 import com.sphenon.basics.customary.*;
 
-import java.util.Vector;
+public class DebugLock extends LockBase {
 
-public interface Permission {
-    public SecurityClass  getSecurityClass(CallContext context);
-    public Vector<String> getAccessTypes(CallContext context);
+    protected String password;
+
+    public DebugLock (CallContext context, String resource_id, String lock_id, String security_class) {
+        super(context, security_class, resource_id, lock_id);
+    }
+
+    public void unlock (CallContext context, Key key) {
+        Key_Password kp = (Key_Password) key;
+        password = kp.getPassword(context);
+    }
+
+    public String getPassword (CallContext context) {
+        return this.password;
+    }
 }

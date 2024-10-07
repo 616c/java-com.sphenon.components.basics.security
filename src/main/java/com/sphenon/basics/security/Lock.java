@@ -1,7 +1,7 @@
 package com.sphenon.basics.security;
 
 /****************************************************************************
-  Copyright 2001-2018 Sphenon GmbH
+  Copyright 2001-2024 Sphenon GmbH
 
   Licensed under the Apache License, Version 2.0 (the "License"); you may not
   use this file except in compliance with the License. You may obtain a copy
@@ -21,6 +21,7 @@ import com.sphenon.basics.customary.*;
 
 public interface Lock {
     public void unlock (CallContext context, Key key);
-    public String getId (CallContext context);
+    public String getResourceId (CallContext context);
+    public String getLockId (CallContext context);
     public String getSecurityClass (CallContext context);
 }

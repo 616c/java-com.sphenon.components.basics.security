@@ -1,7 +1,7 @@
 package com.sphenon.basics.security;
 
 /****************************************************************************
-  Copyright 2001-2018 Sphenon GmbH
+  Copyright 2001-2024 Sphenon GmbH
 
   Licensed under the Apache License, Version 2.0 (the "License"); you may not
   use this file except in compliance with the License. You may obtain a copy
@@ -36,30 +36,21 @@ public class UserManagerPasswordFile extends UserManagerImpl {
     static protected Configuration config;
     static { config = Configuration.create(RootContext.getInitialisationContext(), "com.sphenon.basics.security.UserManagerPasswordFile"); };
 
-    /**
-     * Default constructor
-     */
     public UserManagerPasswordFile (CallContext context) {
         super(context);
     }
 
-    /**
-     * Erstellung mit einer Kennwortdatei
-     * @param context
-     * @param password_file
-     */
     public UserManagerPasswordFile (CallContext context, File password_file) {
-      super(context);
-      this.setPasswordFile(context, password_file);
+        super(context);
+        this.setPasswordFile(context, password_file);
     }
 
-    protected void setPasswordFile(CallContext context, File password_file)
-    {
-      this.password_file_initialised              = false;
-      this.password_file                          = password_file;
-      this.password_file_name                     = password_file.getAbsolutePath();       
-      this.last_modification_of_security_database = -1;
-      this.entries                                = null;
+    protected void setPasswordFile(CallContext context, File password_file) {
+        this.password_file_initialised              = false;
+        this.password_file                          = password_file;
+        this.password_file_name                     = password_file.getAbsolutePath();       
+        this.last_modification_of_security_database = -1;
+        this.entries                                = null;
     }
 
     protected long last_modification_of_security_database;
@@ -80,7 +71,8 @@ public class UserManagerPasswordFile extends UserManagerImpl {
         String key = (user_or_role_name == null || user_or_role_name.length() == 0 ? "Default" : ((entry_type == EntryType.USER ? "User" : "Role") + "." + user_or_role_name));
         if (this.entries != null) {
             permissions = (String) entries.get(key);
-        } else {
+        }
+        if (permissions == null) {
             String prop_id = "Permissions." + key;
             permissions = config.get(context, prop_id, (String) null);
         }
@@ -104,7 +96,7 @@ public class UserManagerPasswordFile extends UserManagerImpl {
                     pf = new File(pfn);
                 }
             }
-            if (pf != null && !pf.exists() ) {
+            if (pf != null && ! pf.exists() ) {
                 if ((notification_level & Notifier.MONITORING) != 0) { NotificationContext.sendCaution(context, "Password file '%(file)' does not exist", "file", pf.getPath()); }
             }
             if (pf != null && pf.exists()) {
@@ -204,9 +196,6 @@ public class UserManagerPasswordFile extends UserManagerImpl {
         } catch (java.io.UnsupportedEncodingException uee) {
             CustomaryContext.create((Context)context).throwLimitation(context, uee, "Unexpected limitation: UTF-8 not supported?");
             throw (ExceptionLimitation) null; // compiler insists
-        } catch (java.io.IOException ioe) {
-                CustomaryContext.create((Context)context).throwEnvironmentFailure(context, ioe, "Could not write to password file");
-                throw (ExceptionEnvironmentFailure) null; // compiler insists
         }
     }
 }

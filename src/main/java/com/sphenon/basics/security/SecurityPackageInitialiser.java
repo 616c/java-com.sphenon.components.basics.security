@@ -16,15 +16,41 @@ package com.sphenon.basics.security;
 
 import com.sphenon.basics.context.*;
 import com.sphenon.basics.context.classes.*;
+import com.sphenon.basics.configuration.*;
 import com.sphenon.basics.message.*;
-import com.sphenon.basics.exception.*;
+import com.sphenon.basics.message.classes.MessageTextClass;
 import com.sphenon.basics.notification.*;
 import com.sphenon.basics.customary.*;
-import com.sphenon.basics.configuration.*;
 import com.sphenon.basics.expression.*;
 
-import com.sphenon.basics.security.returncodes.*;
+public class SecurityPackageInitialiser {
 
-public interface Protected {
-    public String _getSecurityClass(CallContext context);
+    static protected boolean initialised = false;
+
+    static {
+        initialise();
+    }
+
+    static public void initialise () {
+        initialise(RootContext.getRootContext());
+    }
+
+    static public void initialise (CallContext context) {
+        
+        if (initialised == false) {
+            initialised = true;
+
+            ExpressionEvaluatorRegistry.registerExpressionEvaluator(context, new ExpressionEvaluator_Security(context));
+          
+            Configuration.loadDefaultProperties(context, SecurityPackageInitialiser.class);
+        }
+    }
+
+    static protected Configuration config;
+    static public Configuration getConfiguration (CallContext context) {
+        if (config == null) {
+            config = Configuration.create(RootContext.getInitialisationContext(), "com.sphenon.basics.security");
+        }
+        return config;
+    }
 }

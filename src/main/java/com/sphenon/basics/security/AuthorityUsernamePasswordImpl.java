@@ -1,7 +1,7 @@
 package com.sphenon.basics.security;
 
 /****************************************************************************
-  Copyright 2001-2018 Sphenon GmbH
+  Copyright 2001-2024 Sphenon GmbH
 
   Licensed under the Apache License, Version 2.0 (the "License"); you may not
   use this file except in compliance with the License. You may obtain a copy
@@ -58,13 +58,14 @@ abstract public class AuthorityUsernamePasswordImpl extends Class_Changing imple
     // note: this method is intentionally protected - the user
     // MUST only be changed by means of the login-method - this
     // method here is used internally to ensure notification
-    // of the SessionContext
+    // of the SessionContext (but only if there is one)
 
     protected void setUser(CallContext context, User new_user) {
         this.user = new_user;
         Actor new_actor = createActor(context);
         if ((this.notification_level & Notifier.SELF_DIAGNOSTICS) != 0) { CustomaryContext.create(Context.create(context)).sendTrace(context, Notifier.SELF_DIAGNOSTICS, "Changing actor to '%(newactor)'", "newactor", new_actor); }
-        Session.get((Context) context).setActor(context, new_actor);
+        Session s = Session.get((Context) context);
+        if (s != null) { s.setActor(context, new_actor); }
     }
 
     protected Actor createActor(CallContext context) {
@@ -124,24 +125,24 @@ abstract public class AuthorityUsernamePasswordImpl extends Class_Changing imple
             this.logged_in = true;
             if ((this.notification_level & Notifier.OBSERVATION) != 0) { CustomaryContext.create((Context)context).sendTrace(context, Notifier.OBSERVATION, "User '%(user)' logged in (%(authority))", "user", try_username, "authority", this); }
             this.setUser(context, try_user);
-            this.getChangeEventDispatcher(context).notify(context, new SecurityEvent(context, this, true));
+            this.getChangeEventDispatcher(context).notify(context, new SecurityEvent(context, this, this.logged_in));
         } catch (AccessDenied ad) {
             this.logged_in = false;
             if ((this.notification_level & Notifier.OBSERVATION) != 0) { CustomaryContext.create((Context)context).sendTrace(context, Notifier.OBSERVATION, "User '%(user)' login failed", "user", try_username); }
             this.setUser(context, null);
-            this.getChangeEventDispatcher(context).notify(context, new ChangeEvent(context, this));
+            this.getChangeEventDispatcher(context).notify(context, new SecurityEvent(context, this, this.logged_in));
             throw ad;
         } catch (PasswordChangeRequired pcd) {
             this.logged_in = false;
             if ((this.notification_level & Notifier.OBSERVATION) != 0) { CustomaryContext.create((Context)context).sendTrace(context, Notifier.OBSERVATION, "User '%(user)' login deferred", "user", try_username); }
             this.setUser(context, null);
-            this.getChangeEventDispatcher(context).notify(context, new ChangeEvent(context, this));
+            this.getChangeEventDispatcher(context).notify(context, new SecurityEvent(context, this, this.logged_in));
             throw pcd;
         } catch (InvalidNewPassword inp) {
             this.logged_in = false;
             if ((this.notification_level & Notifier.OBSERVATION) != 0) { CustomaryContext.create((Context)context).sendTrace(context, Notifier.OBSERVATION, "User '%(user)' login deferred", "user", try_username); }
             this.setUser(context, null);
-            this.getChangeEventDispatcher(context).notify(context, new ChangeEvent(context, this));
+            this.getChangeEventDispatcher(context).notify(context, new SecurityEvent(context, this, this.logged_in));
             throw inp;
         } finally {
             this.last_modification = new java.util.Date().getTime();
@@ -182,7 +183,15 @@ abstract public class AuthorityUsernamePasswordImpl extends Class_Changing imple
         return this.getPermissions(context).isAccessGranted(context, resource_id, security_class, access_type);
     }
 
+    public String getSecurityProperty(CallContext context, String security_class, String property_name, String default_value) {
+        return this.getPermissions(context).getSecurityProperty(context, security_class, property_name, default_value);
+    }
+
     public Vector<Permission> getPermissionDefinitions(CallContext context) {
-        return this.getPermissions(context).getPermissionDefinitions(context);
+        return this.getPermissionDefinitions(context, false);
+    }
+
+    public Vector<Permission> getPermissionDefinitions(CallContext context, boolean deep) {
+        return this.getPermissions(context).getPermissionDefinitions(context, deep);
     }
 }

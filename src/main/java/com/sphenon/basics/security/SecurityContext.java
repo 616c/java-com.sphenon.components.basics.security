@@ -1,7 +1,7 @@
 package com.sphenon.basics.security;
 
 /****************************************************************************
-  Copyright 2001-2018 Sphenon GmbH
+  Copyright 2001-2024 Sphenon GmbH
 
   Licensed under the Apache License, Version 2.0 (the "License"); you may not
   use this file except in compliance with the License. You may obtain a copy
@@ -18,6 +18,8 @@ import com.sphenon.basics.context.*;
 import com.sphenon.basics.message.*;
 import com.sphenon.basics.exception.*;
 import com.sphenon.basics.customary.*;
+import com.sphenon.basics.session.*;
+import com.sphenon.basics.actor.*;
 
 public class SecurityContext extends SpecificContext {
 
@@ -81,5 +83,10 @@ public class SecurityContext extends SpecificContext {
           This change will affect all not yet migrated applications.
         */
         return SecuritySessionData.get(context).getAuthority(context);
+    }
+
+    static public String getActorName(CallContext context) {
+        Actor a = Session.get((Context) context).getActor(context);
+        return a == null ? null : a.getName(context);
     }
 }

@@ -1,7 +1,7 @@
 package com.sphenon.basics.security;
 
 /****************************************************************************
-  Copyright 2001-2018 Sphenon GmbH
+  Copyright 2001-2024 Sphenon GmbH
 
   Licensed under the Apache License, Version 2.0 (the "License"); you may not
   use this file except in compliance with the License. You may obtain a copy
@@ -31,4 +31,6 @@ public interface UserManager {
     public User getAnonymousUser(CallContext context);
     public Role getRole(CallContext context, String name);
     public long getLastModificationOfSecurityDatabase(CallContext context);
+
+    public enum EntryType { USER, ROLE };
 }

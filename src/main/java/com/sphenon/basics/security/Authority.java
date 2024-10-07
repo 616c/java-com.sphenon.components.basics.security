@@ -1,7 +1,7 @@
 package com.sphenon.basics.security;
 
 /****************************************************************************
-  Copyright 2001-2018 Sphenon GmbH
+  Copyright 2001-2024 Sphenon GmbH
 
   Licensed under the Apache License, Version 2.0 (the "License"); you may not
   use this file except in compliance with the License. You may obtain a copy
@@ -29,13 +29,23 @@ public interface Authority extends Changing {
     public void grantAccess (CallContext context, Lock lock, int access_type) throws AccessDenied;
     public void grantAccess (CallContext context, String resource_id, String security_class, int access_type) throws AccessDenied;
     public boolean isAccessGranted (CallContext context, String resource_id, String security_class, int access_type);
+
     public LoginPanel getLoginPanel (CallContext context);
+    public boolean isLoggedIn (CallContext call_context);
+
     public void reloadUser(CallContext context);
+    public String getSecurityProperty(CallContext context, String security_class, String property_name, String default_value);
 
     /**
        @returns list of current permissions, e.g. to be used in sql queries for filtering
      */
     public Vector<Permission> getPermissionDefinitions(CallContext context);
+
+    /**
+       @returns list of current permissions, e.g. to be used in sql queries for filtering
+       @param deep If true, definitions of bases (roles) are included, otherwise not
+     */
+    public Vector<Permission> getPermissionDefinitions(CallContext context, boolean deep);
 
     /**
        @returns last modification of the authorisation, either by means of changing

@@ -1,7 +1,7 @@
 package com.sphenon.basics.security;
 
 /****************************************************************************
-  Copyright 2001-2018 Sphenon GmbH
+  Copyright 2001-2024 Sphenon GmbH
 
   Licensed under the Apache License, Version 2.0 (the "License"); you may not
   use this file except in compliance with the License. You may obtain a copy
@@ -169,9 +169,6 @@ public class UserManagerPasswordShadowFile extends UserManagerPasswordFile {
         } catch (UnsupportedEncodingException uee) {
             CustomaryContext.create((Context)context).throwLimitation(context, uee, "Unexpected limitation: UTF-8 not supported?");
             throw (ExceptionLimitation) null; // inane, but compiler insists
-        } catch (IOException ioe) {
-                CustomaryContext.create((Context)context).throwEnvironmentFailure(context, ioe, "Could not write to shadow password file");
-                throw (ExceptionEnvironmentFailure) null; // inane, but compiler insists
         }
     }
 }

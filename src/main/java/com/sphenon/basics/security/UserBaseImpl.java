@@ -1,7 +1,7 @@
 package com.sphenon.basics.security;
 
 /****************************************************************************
-  Copyright 2001-2018 Sphenon GmbH
+  Copyright 2001-2024 Sphenon GmbH
 
   Licensed under the Apache License, Version 2.0 (the "License"); you may not
   use this file except in compliance with the License. You may obtain a copy
@@ -22,14 +22,23 @@ import com.sphenon.basics.notification.*;
 import com.sphenon.basics.customary.*;
 import com.sphenon.basics.configuration.*;
 import com.sphenon.basics.expression.*;
+import com.sphenon.basics.system.*;
+import com.sphenon.basics.encryption.*;
 
 import com.sphenon.basics.security.returncodes.*;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
+/* ================================================================================================
 
-import java.util.regex.*;
+ [Related: PermissionsBaseImpl.java
+           UserBaseImpl.java
+           .security.properties
+           /workspace/sphenon/projects/components/basics/security/...  (java files)
+           /workspace/ee/software/components/domains/basics/actors/... (model and java files)
+           .../company/units/organisation/howto.d/manage_emos_keys.howto
+           .../projects/components/ui/frontends/jsp/v0001/origin/source/webapp/WEB-INF/.sirface_auth
+ ]
+
+ ================================================================================================== */
 
 abstract public class UserBaseImpl implements User {
     static final public Class _class = UserBaseImpl.class;
@@ -40,11 +49,10 @@ abstract public class UserBaseImpl implements User {
     static { notification_level = NotificationLocationContext.getLevel(_class); };
 
     static protected Configuration config;
-    static protected int security_version;
     static {
         CallContext context = RootContext.getInitialisationContext();
         config = Configuration.create(context, _class);
-        security_version = config.get(context, "SecurityVersion", 1);
+        // security_version = config.get(context, "SecurityVersion", 1);
     };
 
     protected boolean             is_valid;
@@ -95,6 +103,15 @@ abstract public class UserBaseImpl implements User {
 
     abstract protected void updatePassword(CallContext context, String new_digest) throws InvalidNewPassword;
 
+    private final static int    DIGEST_LENGTH_1 = 40;
+    private final static int    DIGEST_LENGTH_2 = 128;
+    private final static String DUMMY_DIGEST_1  = new String(new char[DIGEST_LENGTH_1]).replace('\0', '0');
+    private final static String DUMMY_DIGEST_2  = new String(new char[DIGEST_LENGTH_2]).replace('\0', '0');
+    private final static String DUMMY_SALT      = new String(new char[EncryptionUtilities.SALT_SIZE * 2]).replace('\0', '0');
+    private final static String DUMMY_STORED_2  = DUMMY_SALT + DUMMY_DIGEST_2;
+    private final static int    STORED_LENGTH_1 = DIGEST_LENGTH_1;
+    private final static int    STORED_LENGTH_2 = (EncryptionUtilities.SALT_SIZE * 2) + DIGEST_LENGTH_2;
+
     public void confirmPassword(CallContext context, String cleartext_password, String new_password) throws PasswordChangeRequired, AccessDenied, InvalidNewPassword {
         if (this.isValid(context) == false) {
             if ((this.notification_level & Notifier.SELF_DIAGNOSTICS) != 0) { CustomaryContext.create((Context)context).sendTrace(context, Notifier.SELF_DIAGNOSTICS, "Invalid user object '%(name)'", "name", this.getName(context)); }
@@ -110,16 +127,19 @@ abstract public class UserBaseImpl implements User {
             // we do the calculations anyway, so the hacker cannot determine from
             // the response time whether a user was found or not
             nothing_found = true;
-            stored_digest = (security_version >= 2 ? DUMMY_STORED_2 : DUMMY_DIGEST_1);
+            stored_digest = DUMMY_STORED_2; // (security_version >= 2 ? DUMMY_STORED_2 : DUMMY_DIGEST_1);
         }
 
         byte[] salt = null;
+
+        int security_version = (stored_digest.length() == STORED_LENGTH_2 ? 2 : 1);
+
         if (security_version >= 2) {
-            String stored_salt = stored_digest.substring(0, SALTSIZE * 2);
-            salt = convertToBytes(context, stored_salt);
+            String stored_salt = stored_digest.substring(0, EncryptionUtilities.SALT_SIZE * 2);
+            salt = EncryptionUtilities.convertToBytes(context, stored_salt);
         }
 
-        String digest = this.getDigest(context, cleartext_password, salt);
+        String digest = this.getDigest(context, cleartext_password, salt, security_version);
         if (    nothing_found
              || cleartext_password == null
              || stored_digest.equalsIgnoreCase(digest) == false
@@ -130,9 +150,12 @@ abstract public class UserBaseImpl implements User {
         }
 
         if (new_password != null) {
-            String new_digest = this.getDigest(context, new_password, createSalt(context));
+            String new_digest                = this.getDigest(context, new_password, EncryptionUtilities.createSalt(context), 2);
+            String new_digest_for_comparison = security_version == 2
+                                                ? new_digest
+                                                : this.getDigest(context, new_password, EncryptionUtilities.createSalt(context), security_version);
 
-            if (stored_digest.equalsIgnoreCase(new_digest)) {
+            if (stored_digest.equalsIgnoreCase(new_digest_for_comparison)) {
                 if ((this.notification_level & Notifier.SELF_DIAGNOSTICS) != 0) { CustomaryContext.create((Context)context).sendCaution(context, "Invalid new password: same as before, new password is rejected"); }
                 if (this.needToChangePassword(context)) {
                     PasswordChangeRequired.createAndThrow(context, InvalidNewPassword.createInvalidNewPassword(context, "Invalid new password: same as before, new password is rejected"), "Password ok, but password change required before login");
@@ -170,98 +193,29 @@ abstract public class UserBaseImpl implements User {
             throw (PasswordChangeRequired) null;
         }
 
-        // we're fine
+        // we're fine (i.e. authorised)
+        // ---------------------------------------------------------------------------------------------------
+
+        // now trying to set user specific decryption key for this session
+
+        String decryption_key_salt = this.getPermissions(context).getVaultEntry(context, "User", "!DecryptionKeySalt!");
+        if (decryption_key_salt != null) {
+            byte[] key_salt = EncryptionUtilities.convertToBytes(context, decryption_key_salt);
+            String key_digest = this.getDigest(context, cleartext_password, key_salt, 2);
+            this.getPermissions(context).setDecryptionKey(context, key_digest);
+        }
+
     }
 
     public boolean isValid (CallContext context) {
         return this.is_valid;
     }
 
-    private static final char HEX_CHARS[] = new char[] {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
-
-    static public String getDigest(CallContext context, String password) {
-        if (security_version >= 2) {
-            CustomaryContext.create((Context)context).throwConfigurationError(context, "The package is configured for security version '%(version)', the invoked method is not any longer available since version 2.", "version", security_version);
-            throw (ExceptionConfigurationError) null; // compiler insists
-        }
-        return getDigest(context, password, null);
-    }
-
-    private final static int    ITERATIONS     = 1000;
-    private final static int    SALTSIZE       = 8; // bytes
-    private final static String DUMMY_DIGEST_1 = new String(new char[40]).replace('\0', '0');
-    private final static String DUMMY_DIGEST_2 = new String(new char[512]).replace('\0', '0');
-    private final static String DUMMY_SALT     = new String(new char[SALTSIZE * 2]).replace('\0', '0');
-    private final static String DUMMY_STORED_2 = DUMMY_SALT + DUMMY_DIGEST_2;
-
     static public String getDigest(CallContext context, String password, byte[] salt) {
-        // see https://www.owasp.org/index.php/Hashing_Java
-        // for recommendations on algorithm
-        MessageDigest md;
-        String algorithm = null;
-        try {
-            algorithm = (security_version >= 2 ? "SHA-512" : "SHA1");
-            md = MessageDigest.getInstance(algorithm);
-        } catch (NoSuchAlgorithmException nsae) {
-            CustomaryContext.create(Context.create(context)).throwConfigurationError(context, "MessageDigest algorithm '%(algorithm)' not available", "algorithm", algorithm);
-            throw (ExceptionConfigurationError) null; // compiler insists
-        }
-
-        if (security_version >= 2) {
-            md.reset();
-            md.update(salt);
-        }
-
-        byte[] bytes = md.digest(password.getBytes());
-
-        if (security_version >= 2) {
-            for (int i = 0; i < ITERATIONS; i++) {
-                md.reset();
-                bytes = md.digest(bytes);
-            }
-        }
-
-        String s1 = (security_version >= 2 ? convertToHexString(context, salt) : "");
-        String s2 = convertToHexString(context, bytes);
-
-        return s1 + s2;
-   }
-
-    static protected String convertToHexString(CallContext context, byte[] bytes) {
-        int i, n;
-        char[] chars = new char[bytes.length*2];
-        for (i = bytes.length - 1; i >= 0; i--) {
-            n = (int)bytes[i] & 0xFF;
-            chars[i*2]   = HEX_CHARS[n/16];
-            chars[i*2+1] = HEX_CHARS[n%16];
-        }
-        return new String(chars);
+        return getDigest(context, password, salt, 2);
     }
 
-    static protected byte[] convertToBytes(CallContext context, String hex_string) {
-        int size = hex_string.length() / 2;
-        byte[] bytes = new byte[size];
-        hex_string = hex_string.toUpperCase();
-        for (int i=0, j=0; i < size; i+=2, j++) {
-            char c1 = hex_string.charAt(i);
-            char c2 = hex_string.charAt(i+1);
-            char c = (char) ((c1 - (c1 > 64 ? 55 : 48)) * 16 + (c2 - (c2 > 64 ? 55 : 48)));
-            bytes[j] = (byte) c;
-        }
-        return bytes;
-    }
-
-    static public byte[] createSalt(CallContext context) {
-        SecureRandom random = null;
-        String algorithm = "SHA1PRNG";
-        try {
-            random = SecureRandom.getInstance(algorithm);
-        } catch (NoSuchAlgorithmException nsae) {
-            CustomaryContext.create(Context.create(context)).throwConfigurationError(context, "SecureRandom algorithm '%(algorithm)' not available", "algorithm", algorithm);
-            throw (ExceptionConfigurationError) null; // compiler insists
-        }
-        byte[] salt = new byte[SALTSIZE];
-        random.nextBytes(salt);
-        return salt;
+    static public String getDigest(CallContext context, String password, byte[] salt, int security_version) {
+        return EncryptionUtilities.getDigest(context, password, salt, 0, 0, security_version);
     }
 }

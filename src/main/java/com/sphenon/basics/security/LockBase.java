@@ -15,13 +15,37 @@ package com.sphenon.basics.security;
 *****************************************************************************/
 
 import com.sphenon.basics.context.*;
+import com.sphenon.basics.context.classes.*;
 import com.sphenon.basics.message.*;
 import com.sphenon.basics.notification.*;
+import com.sphenon.basics.configuration.*;
+import com.sphenon.basics.customary.*;
+import com.sphenon.basics.exception.*;
 import com.sphenon.basics.customary.*;
 
-import java.util.Vector;
+import java.net.*;
+import java.io.*;
 
-public interface Permission {
-    public SecurityClass  getSecurityClass(CallContext context);
-    public Vector<String> getAccessTypes(CallContext context);
-}
+abstract public class LockBase implements Lock {
+    protected String resource_id;
+    protected String lock_id;
+    protected String security_class;
+
+    public LockBase (CallContext context, String security_class, String resource_id, String lock_id) {
+        this.security_class = security_class;
+        this.resource_id    = resource_id;
+        this.lock_id        = lock_id;
+    }
+
+    public String getSecurityClass (CallContext context) {
+        return this.security_class;
+    }
+
+    public String getResourceId (CallContext context) {
+        return this.resource_id;
+    }
+
+    public String getLockId (CallContext context) {
+        return this.lock_id;
+    }
+ }

@@ -1,7 +1,7 @@
 package com.sphenon.basics.security;
 
 /****************************************************************************
-  Copyright 2001-2018 Sphenon GmbH
+  Copyright 2001-2024 Sphenon GmbH
 
   Licensed under the Apache License, Version 2.0 (the "License"); you may not
   use this file except in compliance with the License. You may obtain a copy
@@ -23,7 +23,7 @@ public class Key_Password implements Key {
 
     protected String password;
 
-    public Key_Password (CallContext call_context, String password) {
+    public Key_Password (CallContext context, String password) {
         this.password = password;
     }
     

@@ -1,7 +1,7 @@
 package com.sphenon.basics.security;
 
 /****************************************************************************
-  Copyright 2001-2018 Sphenon GmbH
+  Copyright 2001-2024 Sphenon GmbH
 
   Licensed under the Apache License, Version 2.0 (the "License"); you may not
   use this file except in compliance with the License. You may obtain a copy
@@ -28,10 +28,16 @@ import com.sphenon.basics.security.returncodes.*;
 import java.util.Vector;
 
 public interface Permissions {
-    public void    grantAccess (CallContext context, Lock lock, int access_type) throws AccessDenied;
-    public void    grantAccess (CallContext context, String resource_id, String security_class, int access_type) throws AccessDenied;
-    public boolean isAccessGranted (CallContext context, String resource_id, String security_class, int access_type);
-    public long    getLastModification(CallContext context);
-    
-    public Vector<Permission> getPermissionDefinitions(CallContext context);
+    public void                grantAccess (CallContext context, Lock lock, int access_type) throws AccessDenied;
+    public void                grantAccess (CallContext context, String resource_id, String security_class, int access_type) throws AccessDenied;
+    public boolean             isAccessGranted (CallContext context, String resource_id, String security_class, int access_type);
+    public String              getVaultEntry (CallContext context, String resource_id, String entry_id);
+    public long                getLastModification(CallContext context);
+    public String              getSecurityProperty(CallContext context, String security_class, String property_name, String default_value);
+
+    public Vector<Permissions> getBasePermissions(CallContext context);
+    public Vector<Permission>  getPermissionDefinitions(CallContext context);
+    public Vector<Permission>  getPermissionDefinitions(CallContext context, boolean deep);
+
+    public void                setDecryptionKey(CallContext context, String decryption_key);
 }

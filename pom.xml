@@ -52,12 +52,22 @@
       <version>1.0.0</version>
     </dependency>      
     <dependency>
+      <artifactId>system</artifactId>
+      <groupId>com.sphenon.components.basics</groupId>
+      <version>1.0.0</version>
+    </dependency>      
+    <dependency>
       <artifactId>smallparts</artifactId>
       <groupId>com.sphenon.components.basics</groupId>
       <version>1.0.0</version>
     </dependency>      
     <dependency>
       <artifactId>encoding</artifactId>
+      <groupId>com.sphenon.components.basics</groupId>
+      <version>1.0.0</version>
+    </dependency>      
+    <dependency>
+      <artifactId>encryption</artifactId>
       <groupId>com.sphenon.components.basics</groupId>
       <version>1.0.0</version>
     </dependency>      

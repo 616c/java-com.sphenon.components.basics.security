@@ -1,7 +1,7 @@
 package com.sphenon.basics.security;
 
 /****************************************************************************
-  Copyright 2001-2018 Sphenon GmbH
+  Copyright 2001-2024 Sphenon GmbH
 
   Licensed under the Apache License, Version 2.0 (the "License"); you may not
   use this file except in compliance with the License. You may obtain a copy
@@ -48,6 +48,6 @@ public class RoleImpl extends RoleBaseImpl {
      *                            about modification of the security database
      */
     public RoleImpl (CallContext context, String name, String role_data_string, UserManager user_manager) {
-        super(context, name, PermissionsImpl.create(context, role_data_string, user_manager), user_manager);
+        super(context, name, PermissionsImpl.create(context, role_data_string, user_manager, UserManager.EntryType.ROLE), user_manager);
     }
 }

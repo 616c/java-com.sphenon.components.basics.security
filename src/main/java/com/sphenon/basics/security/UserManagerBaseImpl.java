@@ -1,7 +1,7 @@
 package com.sphenon.basics.security;
 
 /****************************************************************************
-  Copyright 2001-2018 Sphenon GmbH
+  Copyright 2001-2024 Sphenon GmbH
 
   Licensed under the Apache License, Version 2.0 (the "License"); you may not
   use this file except in compliance with the License. You may obtain a copy
@@ -109,29 +109,35 @@ abstract public class UserManagerBaseImpl implements UserManager {
     // cache implementation
 
     protected long cache_reference_time = -1;
+
     protected java.util.Hashtable<String,User> user_cache;
     protected java.util.Hashtable<String,Role> role_cache;
+
     protected void checkCache(CallContext context) {
         long last = this.getLastModificationOfSecurityDatabase(context); 
         if (last > this.cache_reference_time) {
-            this.user_cache = null;
-            this.role_cache = null;
+            this.user_cache           = null;
+            this.role_cache           = null;
             this.cache_reference_time = last;
         }
     }
+
     protected User getCachedUser(CallContext context, String name) {
         checkCache(context);
         return this.user_cache == null ? null : this.user_cache.get(name);
     }
+
     protected void putCachedUser(CallContext context, String name, User user) {
         checkCache(context);
         if (this.user_cache == null) { this.user_cache = new java.util.Hashtable<String,User>(); }
         this.user_cache.put(name, user);
     }
+
     protected Role getCachedRole(CallContext context, String name) {
         checkCache(context);
         return this.role_cache == null ? null : this.role_cache.get(name);
     }
+
     protected void putCachedRole(CallContext context, String name, Role role) {
         checkCache(context);
         if (this.role_cache == null) { this.role_cache = new java.util.Hashtable<String,Role>(); }
